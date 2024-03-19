@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser.add_argument('-balance_sampler', '--balance_sampler', type=str, default=True,
                         help='make sure in each batch, source data has all classes, thus overwrite batch size with number of classes.')
 
-    parser.add_argument('-evaluate_on_target', '--evaluate_on_target', type=str, default=False,
+    parser.add_argument('--evaluate_on_target', action='store_true',
                         help='if there are labels for target data, then we can evaluate different models during training.')
     parser.add_argument('-model_save_name', '--model_save_name', type=str,
                         default='-combined_target_data-aug_cutmix_autoaug-vessel6-546-250-lre-4-1level-balance-batch34-01weight-no_multi',
@@ -53,6 +53,9 @@ if __name__ == '__main__':
     parser.add_argument('-tracking_result', '--tracking_result', type=str,
                         default='/home/jiemei/Documents/vit_for_rail/test_sleeper_shark/results/combined_unlabeled_target_data_vessel6-546-250.csv',
                         help="target data obtained from tracking algorithm.")
+    parser.add_argument('-uda_img_dir', '--uda_img_dir', type=str,
+                        default='/home/jiemei/Documents/vit_for_rail/test_sleeper_shark/results/combined_unlabeled_target_data_vessel6-546-250.csv',
+                        help="target image data")
 
     args = parser.parse_args()
 
@@ -94,12 +97,12 @@ if __name__ == '__main__':
     # folder to save model
     # model_name = 'resnet18'
     model_name = 'resnext50_32x4d'
-    model_save_path = './checkpoints/' +model_name +'_lmmd' +args.model_save_name
+    model_save_path = './checkpoints/' +model_name +'_lmmd-' +args.model_save_name
     if not os.path.exists(model_save_path):
         os.makedirs(model_save_path)
-    writer = SummaryWriter('./logs/'+model_name +'_lmmd'+args.model_save_name)
-    save_path_val = './per img predictions val/'+model_name +'_lmmd'+args.model_save_name
-    save_path_tr = './per img predictions train/'+model_name +'_lmmd'+args.model_save_name
+    writer = SummaryWriter('./logs/'+model_name +'_lmmd-'+args.model_save_name)
+    save_path_val = './per img predictions val/'+model_name +'_lmmd-'+args.model_save_name
+    save_path_tr = './per img predictions train/'+model_name +'_lmmd-'+args.model_save_name
 
 
     pretrain=True
@@ -141,7 +144,8 @@ if __name__ == '__main__':
 
     if balance_sampler:
         n_samples = 1
-        BATCH_SIZE_UDA = NUM_level_2_CLASSES * n_samples
+        # BATCH_SIZE_UDA = NUM_level_2_CLASSES * n_samples
+        BATCH_SIZE_UDA = args.batch_size # Suzanne doesn't have enough GPU memory
         BATCH_SIZE = BATCH_SIZE_UDA
         # embed()
         # sampler = BalancedBatchSampler(train_dataset, NUM_level_2_CLASSES, n_samples=n_samples)
@@ -150,7 +154,7 @@ if __name__ == '__main__':
         # sample_weights = calculate_sample_weight(n_classes=NUM_level_2_CLASSES, trainset=train_dataset)
         # sampler = WeightedRandomSampler(torch.DoubleTensor(sample_weights), len(train_dataset), replacement=True)
         train_loader = DataLoaderX(dataset=train_dataset,
-                                   batch_size=NUM_level_2_CLASSES * n_samples,
+                                   batch_size=BATCH_SIZE,
                                    # collate_fn=collate_fn,
                                    shuffle=False,
                                    num_workers=0,
@@ -175,7 +179,7 @@ if __name__ == '__main__':
     # tracking_result = 'test_sleeper_shark/AK-50308-220423_214636-C1H-025-220524_210051_809_1-20230105T014047Z-001-result/AK-50308-220423_214636-C1H-025-220524_210051_809_1/tracking_result_with_huber.csv'
 
     #since combined_csv hsa full path
-    uda_img_dir = ''
+    uda_img_dir = args.uda_img_dir
     # tracking_result = '/home/jiemei/Documents/vit_for_rail/test_sleeper_shark/results/combined_unlabeled_target_data.csv'
     # tracking_result = '/home/jiemei/Documents/vit_for_rail/test_sleeper_shark/results/combined_unlabeled_target_data_3gt.csv'
     # tracking_result = '/home/jiemei/Documents/vit_for_rail/test_sleeper_shark/results/combined_unlabeled_target_data_6gt.csv'
@@ -342,7 +346,7 @@ if __name__ == '__main__':
             target_logits = pred[BATCH_SIZE:]
 
             # Step-5: classification loss
-            clf_loss = loss(source_logits, targets[:,1])
+            clf_loss = loss(source_logits, targets[:,1].long())
 
             # Step-6: lmmd loss. get pseudo labels
             target_probas = torch.nn.functional.softmax(target_logits, dim=1)

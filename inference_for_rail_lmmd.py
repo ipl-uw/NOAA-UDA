@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
 
 
-    BATCH_SIZE = 256 *3
+    BATCH_SIZE = 256
     img_size = 224
 
 
@@ -70,7 +70,7 @@ if __name__ == '__main__':
                                         img_dir=img_dir,
                                         transform=custom_transform,
                                         crop=True,
-                                        species_column='species')
+                                        species_column='class')
 
 
     data_loader = DataLoaderX(dataset=dataset,
@@ -124,7 +124,7 @@ if __name__ == '__main__':
         # prediction_result = tracking_result.replace(tracking_result.split('/')[-1], 'flat_classification_result_lmmd--separate_target_data-aug_cutmix_autoaug-lre-6-on_SR_gt.csv')
         # prediction_result = tracking_result.replace(tracking_result.split('/')[-1],
         #                                             'flat_classification_result_lmmd--separate_target_data-aug_cutmix_autoaug-balance-lre-3-on_SR_gt.csv')
-        prediction_result = tracking_result.replace(tracking_result.split('/')[-1],
+        prediction_result = tracking_result.replace(tracking_result.split('\\')[-1],
                                                     args.prediction_result)
         # prediction_result = tracking_result.replace(tracking_result.split('/')[-1],
         #                                             'flat_classification_result_lmmd--separate_target_data-aug_cutmix_autoaug-balance-lre-6-on_SR_gt.csv')
